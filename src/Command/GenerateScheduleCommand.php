@@ -63,7 +63,7 @@ class GenerateScheduleCommand extends Command
             $records = $this->dataService->handle($periodMonths);
         } catch (\Exception $ex) {
             $output->writeln("<error>{$ex->getMessage()}</>");
-            exit(0);
+            exit(1);
         }
        
         $this->renderTable($records,$output);
@@ -72,7 +72,7 @@ class GenerateScheduleCommand extends Command
            $fileLocation = $this->csvService->handle($records,$this->dataService->getHeaders());
         } catch (CannotInsertRecord $e) {
             $output->writeln("<error>Cannot insert record {$e->getRecord()}</>");
-            exit(0);
+            exit(1);
         }
 
         $output->writeln('<info>Done!</>');

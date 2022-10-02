@@ -9,6 +9,9 @@ use Carbon\CarbonPeriod;
 class GenerateScheduleData 
 {
 
+    /**
+    * @var array
+    */
     private static $headers = ['Date', 'Activities', 'Total_Time'];
 
     /**
