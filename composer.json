@@ -1,0 +1,28 @@
+{
+    "name": "cleaning/schedule-generator",
+    "description": "Generates cleaning schedule",
+    "type" : "project",
+    "license": "MIT",
+    "authors" : [
+        {
+            "name": "Aleksandar Atanasov",
+            "email": "aleksandar.atanasov91@yahoo.com"
+        }
+    ],
+    "require": {
+        "symfony/console": "^6.0.2",
+        "symfony/config": "^6.1",
+        "symfony/dependency-injection": "^6.1",
+        "symfony/yaml": "^6.1",
+        "nesbot/carbon": "^2.62",
+        "league/csv": "^9.0"
+    },
+    "config": {
+        "optimize-autoloader": true
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src"
+        }
+    }
+}
