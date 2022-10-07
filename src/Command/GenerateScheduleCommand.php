@@ -8,8 +8,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use App\Services\GenerateScheduleData;
-use League\Csv\CannotInsertRecord;
 use App\Services\ExportScheduleToCsv;
+use League\Csv\CannotInsertRecord;
+use App\Helpers\DateHelper;
 use Carbon\CarbonPeriod;
 use League\Csv\Writer;
 use Carbon\Carbon;
@@ -98,8 +99,8 @@ class GenerateScheduleCommand extends Command
 
             $table->addRow([
                 $record['date'],
-                $record['activity'],
-                $record['duration']->format('H:i')
+                $record['name'],
+                DateHelper::secondsToTime($record['duration'],$format='%02d:%02d')
             ]);
 
         }

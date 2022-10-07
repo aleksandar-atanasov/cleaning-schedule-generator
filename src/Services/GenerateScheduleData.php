@@ -2,9 +2,13 @@
 
 namespace App\Services;
 
-use Carbon\Carbon;
+use App\Models\RefrigeratorCleaning;
+use App\Models\WindowCleaning;
+use InvalidArgumentException;
+use App\Helpers\DateHelper;
+use App\Models\Vacuuming;
 use Carbon\CarbonPeriod;
-
+use Carbon\Carbon;
 
 class GenerateScheduleData 
 {
@@ -25,38 +29,67 @@ class GenerateScheduleData
 
         $end = $start->clone()->addMonths($periodMonths);
 
-        $dates = $this->getDatesFromRange($start->format('Y-m-d'),$end->format('Y-m-d'));
+        $dates = DateHelper::getDatesFromRange($start->format('Y-m-d'),$end->format('Y-m-d'));
 
         $data = [];
 
         foreach($dates as $date){
 
-            if($date->isTuesday() || $date->isThursday()){
-
+            if(DateHelper::isVacuumingDay($date)){
+                $vacuuming = Vacuuming::make();
                 $data[$date->format('d-m-Y')] = [
                     'date'     => $date->format('d-m-Y'),
-                    'activity' => 'Vacuuming',
-                    'duration' => Carbon::createFromFormat('d-m-Y H:i',$date->format('d-m-Y') . '00:21' )
+                    'name'     => $vacuuming->getName(),
+                    'duration' => $vacuuming->getDuration()
                 ];
             }
 
-            $lastFriday = new Carbon('last Friday of ' . $date->format('F Y'));
-            // assuming that the last working day of the month is Friday
-            if($date->isFriday() && $date->isSameDay($lastFriday)){
+            $lastDayOfTheMonth = DateHelper::getLastDayOfTheMonthFromDate($date);
+          
+            $windowCleaning = WindowCleaning::make();
+            // Not taking into account the bank holidays/national holidays
+            if(DateHelper::isTheLastDayOfTheMonthWeekday($date) && $date->isSameDay($lastDayOfTheMonth)){
 
-                $data[$date->format('d-m-Y')] = [
-                    'date'     => $date->format('d-m-Y'),
-                    'activity' => 'Window cleaning',
-                    'duration' => Carbon::createFromFormat('d-m-Y H:i',$date->format('d-m-Y') . '00:35' )
-                ];
+                $lastWorkingDayOfTheMonth = $date;
+
+                if(DateHelper::isVacuumingDay($lastWorkingDayOfTheMonth)){
+
+                    $data[$lastWorkingDayOfTheMonth->format('d-m-Y')]['name'] .= ', ' . $windowCleaning->getName();
+
+                    $data[$lastWorkingDayOfTheMonth->format('d-m-Y')]['duration'] += $windowCleaning->getDuration();
+
+                }else{
+                    $data[$lastWorkingDayOfTheMonth->format('d-m-Y')] = [
+                        'date'     => $date->format('d-m-Y'),
+                        'name'     => $windowCleaning->getName(),
+                        'duration' => $windowCleaning->getDuration()
+                    ];
+                }
             }
 
-            $firstVacumingDayOfTheMonth = new Carbon('first Tuesday of ' . $date->format('F Y'));
+            //if the last day of the month is during the weekend get the last working day e.g(friday)
+            if(DateHelper::isTheLastDayOfTheMonthDuringTheWeekend($date) && $date->isSameDay($lastDayOfTheMonth)){
 
-            if($date->isTuesday() && $date->isSameDay($firstVacumingDayOfTheMonth)){
+                $lastWorkingDayOfTheMonth = $lastDayOfTheMonth->isSaturday() 
+                                            ? $date->clone()->subDay(1) 
+                                            : ($lastDayOfTheMonth->isSunday() 
+                                            ? $date->clone()->subDays(2) 
+                                            : $date);
 
-                $data[$date->format('d-m-Y')]['activity'] .= ', Refrigerator cleaning';
-                $data[$date->format('d-m-Y')]['duration']->addMinutes(50);
+                $data[$lastWorkingDayOfTheMonth->format('d-m-Y')] = [
+                    'date'     => $lastWorkingDayOfTheMonth->format('d-m-Y'),
+                    'name'     => $windowCleaning->getName(),
+                    'duration' => $windowCleaning->getDuration()
+                ];
+            }
+            
+            if(DateHelper::isTheFirstVacuumingDayOfTheMonth($date)){
+
+                $refrigeratorCleaning = RefrigeratorCleaning::make();
+
+                $data[$date->format('d-m-Y')]['name'] .= ', ' . $refrigeratorCleaning->getName();
+
+                $data[$date->format('d-m-Y')]['duration'] += $refrigeratorCleaning->getDuration();
             }
         }
 
@@ -64,25 +97,11 @@ class GenerateScheduleData
     }
 
     /**
-     * @author Aleksandar Atanasov
-     * @return array
-     */
+    * @author Aleksandar Atanasov
+    * @return array
+    */
     public function getHeaders() : array
     {
         return self::$headers;
-    }
-
-    /**
-     * Returns dates array of Carbon objects from given date range
-     * 
-     * @author Aleksandar Atanasov
-     * @param string $startDate
-     * @param string $endDate
-     * @return array
-     */
-    private function getDatesFromRange(string $startDate, string $endDate) : array
-    {
-        $period = CarbonPeriod::create($startDate, $endDate);
-        return $period->toArray();
     }
 }

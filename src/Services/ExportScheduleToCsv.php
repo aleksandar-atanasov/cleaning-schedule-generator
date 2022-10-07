@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\DateHelper;
 use League\Csv\Writer;
 
 class ExportScheduleToCsv
@@ -31,8 +32,8 @@ class ExportScheduleToCsv
         foreach($records as $record){
             $writer->insertOne([
                 $record['date'],
-                $record['activity'],
-                $record['duration']->format('H:i'),
+                $record['name'],
+                DateHelper::secondsToTime($record['duration'],$format='%02d:%02d')
             ]); 
         }
 
