@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-class Model
+abstract class Model
 {
 
     protected function __construct(protected string $name, protected int $duration){}
